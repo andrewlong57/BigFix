@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<BES xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="BES.xsd">
+	<Fixlet>
+		<Title>BIOS Setting - Enable WLANAutoSense</Title>
+		<Description><![CDATA[&lt;enter a description of the problem and the corrective action here&gt; ]]></Description>
+		<Relevance>(name of operating system as string as lowercase contains "win10") or (name of operating system as string as lowercase contains "win11")</Relevance>
+		<Relevance>if(exists file "C:\Work\Logs\Wlanautosense.txt") then ( not (exists file ("C:\Work\Logs\Wlanautosense.txt") whose (exists lines whose (it contains "Successful") of it))) else (TRUE)</Relevance>
+		<Relevance>exists values "vendor" whose(it as string as trimmed string as uppercase contains "Dell" as trimmed string as uppercase) of structures "bios_information" of smbios</Relevance>
+		<Category></Category>
+		<Source>Internal</Source>
+		<SourceID></SourceID>
+		<SourceReleaseDate>2023-05-03</SourceReleaseDate>
+		<SourceSeverity></SourceSeverity>
+		<CVENames></CVENames>
+		<SANSID></SANSID>
+		<MIMEField>
+			<Name>x-fixlet-modification-time</Name>
+			<Value>Thu, 04 May 2023 01:43:12 +0000</Value>
+		</MIMEField>
+		<Domain>BESC</Domain>
+		<DefaultAction ID="Action1">
+			<Description>
+				<PreLink>Click </PreLink>
+				<Link>here</Link>
+				<PostLink> to deploy this action.</PostLink>
+			</Description>
+			<ActionScript MIMEType="application/x-Fixlet-Windows-PowerShell">$autoSensePath = "DellSmbios:\PowerManagement\WlanAutoSense"
+$logPath = "C:\Work\Logs\Wlanautosense.txt"
+if (test-path $logPath){
+    Remove-Item $logPath
+}
+New-Item $logPath -Force
+
+if(-not (Get-Module DellBIOSProvider -ListAvailable)){
+    install-Module -Name DellBIOSProvider -Force    
+}
+if(-not (Get-Module DellBIOSProvider -ListAvailable)){
+    Add-content -path $logPath -Value "Failed to install module"
+    exit 10   
+}
+
+Import-Module DellBIOSProvider
+
+if((Test-path $autoSensePath) -eq $false){
+    Add-content -path $logPath -Value  "BIOS setting does not exist"
+    exit 15
+}
+
+Set-Item $autoSensePath "Enabled"
+
+if((Get-ChildItem $autoSensePath | Select-Object -ExpandProperty CurrentValue) -eq "Enabled"){
+    Add-content -path $logPath -Value  "Successful"
+    exit 0
+}
+else {
+    Add-content -path $logPath -Value  "Failed to set value"
+    exit 20
+}</ActionScript>
+			<SuccessCriteria Option="OriginalRelevance"></SuccessCriteria>
+		</DefaultAction>
+	</Fixlet>
+</BES>
